@@ -18,5 +18,7 @@ app.get ('/', (req, res) => {
   res.send('server is running' );
   
 });
-app.use('/api/inngest', serve({ client: inngest, functions }));
+app.use('/api/inngest', serve({ client: inngest, functions ,
+  signingKey: process.env.INNGEST_SINGING_KEY,
+}));
 app.listen(port, () => console.log(`Server is running on http://localhost:${port}`));
