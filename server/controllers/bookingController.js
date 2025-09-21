@@ -1,3 +1,4 @@
+import { inngest } from "../inngest/index.js";
 import Booking from "../models/Booking.js";
 import Show from "../models/Show.js";
 import Stripe from "stripe";
@@ -80,6 +81,13 @@ export const creatBooking = async (req, res) => {
     booking.paymentLink = session.url;
     await booking.save();
 
+    // run function of deleting the booking after 10 minutes
+    await inngest.send ({
+        name:"app/checkpayment",
+        data: {
+            bookingId: booking._id.toString()
+        }
+    })
 
     res.json({ success: true, url: session.url });
   } catch (error) {
