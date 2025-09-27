@@ -1,9 +1,9 @@
-import logo from '/Users/ahmedsh/Documents/cinima system/client/src/assets/logo.svg'
-import marvelLogo from '/Users/ahmedsh/Documents/cinima system/client/src/assets/marvelLogo.svg'
-import googlePlay from '/Users/ahmedsh/Documents/cinima system/client/src/assets/googlePlay.svg'
-import appStore from '/Users/ahmedsh/Documents/cinima system/client/src/assets/appStore.svg'
-import screenImage from '/Users/ahmedsh/Documents/cinima system/client/src/assets/screenImage.svg'
-import profile from '/Users/ahmedsh/Documents/cinima system/client/src/assets/profile.png'
+import logo from './logo.svg'
+import marvelLogo from './marvelLogo.svg'
+import googlePlay from './googlePlay.svg'
+import appStore from './appStore.svg'
+import screenImage from './screenImage.svg'
+import profile from './profile.png'
 export const assets = {
     logo,
     marvelLogo,
