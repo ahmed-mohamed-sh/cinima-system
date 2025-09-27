@@ -10,15 +10,20 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const sendEmail = async (email, subject, message) => {
-  const mailOptions = {
-    from: process.env.SENDER_EMAIL,
-    to: email,
-    subject,
-    text: message,
-  };
-  await transporter.sendMail(mailOptions);
-  console.log("Email sent successfully");
+const sendEmail = async ({ to, subject, body }) => {
+  try {
+    const response = await transporter.sendMail({
+      from: process.env.SENDER_EMAIL || "no-reply@cinema.com",
+      to,
+      subject,
+      html: body,
+    });
+    return response;
+    console.log("✅ Email sent successfully to:", to);
+  } catch (error) {
+    console.error("❌ Error sending email:", error.message);
+    throw error;
+  }
 };
 
 export default sendEmail;

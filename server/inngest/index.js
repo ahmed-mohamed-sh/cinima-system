@@ -58,54 +58,106 @@ const releaseSeatsAndDeleteBooking = inngest.createFunction(
   { id: "release-seats-and-delete-booking" },
   { event: "app/checkpayment" },
   async ({ event, step }) => {
-    const tenMinutesAgo = new Date(Date.now() + 10 * 60 * 1000);
-    await step.sleepUntil('wait-for-10-minutes',tenMinutesAgo);
+    try {
+      console.log("🔔 Inngest function start:", { eventType: event?.type, data: event?.data });
 
-    await step.run('check-payment-status',
-      async ({ event }) => {
-        const { bookingId } = event.data;
-        await Booking.findByIdAndDelete(bookingId);
+      if (!event || !event.data) {
+        console.log("⚠️ No event data, aborting.");
+        return;
+      }
 
-        // if payment is not done then release the seats
-        if(!bookingId.isPaid){
-          const { showId, bookedSeats } = await Booking.findById(bookingId);
-          const show = await Show.findById(showId);
-          bookedSeats.forEach((seat) => {
+      const { bookingId } = event.data;
+      if (!bookingId) {
+        console.log("⚠️ bookingId missing in event.data, aborting.");
+        return;
+      }
+
+      // انتظر 10 دقائق (sleepUntil يأخذ تاريخ مستقبلي)
+      const tenMinutesLater = new Date(Date.now() + 10 * 60 * 1000);
+      console.log(`⏳ Sleeping until ${tenMinutesLater.toISOString()} for booking ${bookingId}`);
+      await step.sleepUntil("wait-for-10-minutes", tenMinutesLater);
+
+      // هنا استخدم event من الscope الخارجي — لا تستقبل event كـ arg داخل callback
+      await step.run("check-payment-status", async () => {
+        console.log("🔎 Running check-payment-status for booking:", bookingId);
+
+        const booking = await Booking.findById(bookingId).populate("show");
+        if (!booking) {
+          console.log(`ℹ️ Booking ${bookingId} not found or already deleted.`);
+          return;
+        }
+
+        // لو مدفوع خلاص
+        if (booking.isPaid) {
+          console.log(`✅ Booking ${bookingId} already paid. No action.`);
+          return;
+        }
+
+        // إطلاق المقاعد في العرض
+        const show = await Show.findById(booking.show._id);
+        if (show && Array.isArray(booking.bookedSeats) && booking.bookedSeats.length) {
+          booking.bookedSeats.forEach((seat) => {
             show.occupiedSeats[seat] = null;
           });
-          show.markModified('occupiedSeats');
+          show.markModified("occupiedSeats");
           await show.save();
-          await Booking.findByIdAndDelete(bookingId);
-          await Show.findByIdAndUpdate(showId, show);
+          console.log(`🔓 Released seats for booking ${bookingId}:`, booking.bookedSeats);
+        } else {
+          console.log(`ℹ️ No seats to release for booking ${bookingId}`);
         }
-      }
-    )
+
+        // احذف الحجز
+        await Booking.findByIdAndDelete(bookingId);
+        console.log(`🗑️ Booking ${bookingId} deleted.`);
+      });
+
+      console.log("✔️ releaseSeatsAndDeleteBooking finished for", bookingId);
+    } catch (err) {
+      console.error("🔥 Error in releaseSeatsAndDeleteBooking:", err);
+      throw err; // لو عايز ال-run يظهر كـ failed في inngest
+    }
   }
-)
+);
+
 
 // inngest funtion to send email to user when booking is created
 
 const sentBookingConfirmationEmail = inngest.createFunction(
   { id: "sent-booking-confirmation-email" },
   { event: "app/show.booked" },
-  async ({ event,step }) => {
-    const { bookingId } = event.data;
-    await step.run('send-booking-confirmation-email',
-      async ({ event }) => {
-        const { bookingId } = event.data;
-        await Booking.findById(bookingId).populate({
-          path: "show",
-          populate: {
-            path: "movie",
-            model: "Movie",
-          },
-        }).populate("user");
-        await sendEmail({to:booking.user.email, email, subject: `Booking Confirmation:${booking.show.movie.title}`, message: "Your booking has been confirmed!"});
-      }
-    )
-  }
-)
+  async ({ event, step }) => {
+    console.log("🔥 Inngest function triggered", event);
 
+    const { bookingId } = event.data;
+
+      const booking = await Booking.findById(bookingId)
+        .populate({
+          path: "show",
+          populate: { path: "movie", model: "Movie" },
+        })
+        .populate("user");
+
+      console.log("✅ Booking found:", booking?._id);
+
+      if (!booking) throw new Error("Booking not found");
+
+      await sendEmail({
+        to: booking.user.email,
+        subject: `Booking Confirmation: "${booking.show.movie.title}" booked successfully`,
+        body: `<div style = "font-family: Arial, sans-serif; line-height:1.5;"> 
+        <h2>Hi ${booking.user.name},</h2>
+        <p>Thanks for your booking of "${booking.show.movie.title}".</p>
+        <p>Booking details:</p>
+        <ul>
+          <li>Show: ${booking.show.movie.title}</li>
+          <li>Date: ${booking.show.date}</li>
+          <li>Time: ${booking.show.time}</li>
+          <li>Seats: ${booking.bookedSeats.join(", ")}</li>
+        </ul>
+        <p>Best regards,<br>QuickShow Team</p>
+      </div>`,
+      });
+    });
 export const functions = [
   syncUserToCreation,
   syncUserToDeletion,

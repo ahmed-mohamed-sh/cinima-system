@@ -31,8 +31,9 @@ export const stripeWebhook = async (req, res) => {
         const session = sessionList.data[0];
         const {bookingId} = session.metadata;
         await Booking.findByIdAndUpdate(bookingId, {isPaid: true, paymentLink: ""}); 
+        
         //send Confirmation Email
-        await inngest.send("app/show.booked", {bookingId});
+        await inngest.send({name:"app/show.booked", data:{bookingId}});
         break;
       default:
         console.log(`Unhandled event type: ${event.type}`);
