@@ -1,9 +1,9 @@
-import logo from '../assets/logo.svg'
-import marvelLogo from '../assets/marvelLogo.svg'
-import googlePlay from '../assets/googlePlay.svg'
-import appStore from '../assets/appStore.svg'
-import screenImage from '../assets/screenImage.svg'
-import profile from '../assets/profile.png'
+import logo from './logo.svg'
+import marvelLogo from './marvelLogo.svg'
+import googlePlay from './googlePlay.svg'
+import appStore from './appStore.svg'
+import screenImage from './screenImage.svg'
+import profile from './profile.png'
 export const assets = {
     logo,
     marvelLogo, 
