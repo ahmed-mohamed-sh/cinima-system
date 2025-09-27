@@ -6,7 +6,7 @@ import screenImage from '../assets/screenImage.svg'
 import profile from '../assets/profile.png'
 export const assets = {
     logo,
-    marvelLogo,
+    marvelLogo, 
     googlePlay,
     appStore,
     screenImage,
